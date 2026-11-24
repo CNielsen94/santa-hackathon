@@ -12,14 +12,17 @@ Instead you score your pipeline on training letters it hasn't seen.
 
 ## 1. Get the data
 
-Download `train.zip` and `test.zip` from the Releases page and unzip them in this folder:
+Download `train.zip`, `known_fakes.zip` and `test.zip` from the Releases page. Unzip each into
+a folder of the same name (`train/`, `known_fakes/`, `test/`) in this folder:
 
 ```
 santa-hackathon/
-  train/images/        500 photos
-  train/train.jsonl    the answers for those photos
-  train/train.csv      the same answers as a spreadsheet
-  test/images/         2,924 photos, no answers
+  train/images/                    500 photos of genuine letters
+  train/train.jsonl                the answers for those photos
+  train/train.csv                  the same answers as a spreadsheet
+  known_fakes/images/              15 photos of confirmed fakes
+  known_fakes/known_fakes.jsonl    their text and signed name
+  test/images/                     2,924 photos, no answers
 ```
 
 ## 2. The answer format (`train.jsonl`)
@@ -44,7 +47,9 @@ One letter per line. Each line is a JSON object like this (shortened):
 - `wishes`: each wish as it is written in the letter, and the workshop that makes it
 - `workshops`: the workshops of all the wishes together
 
-All training letters are genuine. Some test letters are not.
+All training letters are genuine. `known_fakes.jsonl` has the same format for the 15 confirmed
+fakes, with `"is_fake": 1` and no wishes (a fake goes to no workshop). Some test letters are
+fakes too, but nobody knows how many.
 
 ## 3. Keep some training letters aside
 
@@ -58,10 +63,15 @@ python split_train.py train/train.jsonl --dev 100
 This writes `train/build.jsonl` (400 letters to build with) and `train/dev.jsonl` (100 letters
 to score on). Use the same split all week so your scores stay comparable.
 
+The same goes for the known fakes: if you tune your fake detector until it catches all 15,
+those 15 can no longer tell you how well it works. Look at a few of them while you build, and
+keep the rest for checking.
+
 ## 4. Make a predictions file
 
-Run your pipeline on the photos of the letters in `train/dev.jsonl` and write one CSV row per
-letter, in exactly the format you will hand in (see the README):
+Run your pipeline on the photos of the letters in `train/dev.jsonl` **and** on the 15 photos
+in `known_fakes/images`, and write one CSV row per letter, in exactly the format you will hand
+in (see the README):
 
 ```
 id,is_fake,name,workshops,transcription,wishes,fake_score
@@ -87,10 +97,10 @@ will only complain that test letters are missing.
 ## 6. Score your dev predictions
 
 ```
-python score.py --key train/dev.jsonl --submission my_dev_predictions.csv --only-submitted
+python score.py --key train/dev.jsonl known_fakes/known_fakes.jsonl --submission my_dev_predictions.csv --only-submitted
 ```
 
-`--only-submitted` scores only the letters in your file. The output looks like this (example numbers):
+`--key` takes one or more answer files. `--only-submitted` scores only the letters in your file. The output looks like this (example numbers):
 
 ```
 **Christmas score: 71.3** (100 = every wish delivered, every fake caught)
@@ -101,7 +111,7 @@ python score.py --key train/dev.jsonl --submission my_dev_predictions.csv --only
 | names | exact match | 74.0% |
 | wish extraction | recall / precision | 88.2% / 91.0% |
 | routing | right workshop, of the wishes found | 80.5% |
-| fake detection | precision / recall / F1 | 0.0% / 0.0% / 0.0% |
+| fake detection | precision / recall / F1 | 84.6% / 73.3% / 78.6% |
 | fake detection | ROC AUC | n/a (no fake_score) |
 | fake detection | genuine letters wrongly flagged | 3.0% |
 | end to end | genuine letters fully right | 41.0% |
@@ -115,12 +125,12 @@ How to read it:
 - **wish extraction**: recall is the share of the real wishes you found; precision is the share
   of your wishes that are real. Close spellings count ("bike" matches "a bike").
 - **routing**: only for the wishes you found, so it measures routing on its own.
-- **fake detection**: the training letters are all genuine, so precision, recall and AUC show 0
-  or n/a here. The useful number is **genuine letters wrongly flagged**: every genuine letter
-  you flag costs a child all their presents. How well you catch fakes only shows in the final
-  ranking.
-- **Christmas score**: the number the ranking uses (see the README). On dev letters it can
-  only reward wishes, so it looks higher than it will on the test set.
+- **fake detection**: recall is the share of the known fakes you caught; **genuine letters
+  wrongly flagged** is the share of your dev letters you flagged by mistake. Every genuine letter
+  you flag costs a child all their presents. Precision here is not what you'll get on the test
+  set: your dev mix has 15 fakes in about 115 letters, and the test set has its own, unknown mix.
+- **Christmas score**: the number the ranking uses (see the README). Your dev mix differs from
+  the test set, so treat it as a guide, not a forecast.
 
 ## 7. Hand in
 

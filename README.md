@@ -9,11 +9,12 @@ photographed, and the elves need a pipeline that, for each photo:
 4. **sends every wish** in a genuine letter to the right workshop
    ([workshops.json](workshops.json)). Fake letters go to no workshop.
 
-Not all of Santa's mail comes from children. Nobody knows how much of it is
-fake, or what the fakes look like: no one has caught one yet. What the elves
-do have is a sample of letters they checked by hand and know to be genuine.
-Fake detection works like fraud detection: learn what genuine mail looks like,
-then flag what doesn't fit.
+Not all of Santa's mail comes from children, and nobody knows how much of it is
+fake. The elves have checked a sample of letters by hand and know them to be
+genuine, and they have caught a few fakes: 15 of them. That's too few to learn
+from on their own, but enough to test your ideas on. Fake detection works like
+fraud detection: learn what genuine mail looks like, flag what doesn't fit, and
+use the known fakes to check that you catch them.
 
 ## Data
 
@@ -22,6 +23,7 @@ Download both files from the [Releases](../../releases) page:
 | file | contents |
 |---|---|
 | `train.zip` (about 210 MB) | 500 genuine letters: `images/` plus `train.jsonl` and `train.csv` with every answer: the text visible on the page, the name, and each wish as written with its workshop |
+| `known_fakes.zip` (about 6 MB) | 15 confirmed fakes: `images/` plus `known_fakes.jsonl` and `known_fakes.csv` with the text visible on the page and the name they signed with. They are not part of the test set |
 | `test.zip` (about 1.2 GB) | 2,924 photos with no answers. Your score comes from these |
 
 `test_ids.txt` lists every test letter. A letter's id is its file name without

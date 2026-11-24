@@ -200,13 +200,15 @@ def as_markdown(s):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--key", required=True)
+    ap.add_argument("--key", required=True, nargs="+", help="one or more answer files (JSONL)")
     ap.add_argument("--submission", required=True)
     ap.add_argument("--only-submitted", action="store_true", help="score only the letters in the submission")
     ap.add_argument("--json", action="store_true", help="print the scores as JSON")
     a = ap.parse_args(argv)
-    with open(a.key, encoding="utf-8") as fh:
-        key_rows = [json.loads(line) for line in fh if line.strip()]
+    key_rows = []
+    for path in a.key:
+        with open(path, encoding="utf-8") as fh:
+            key_rows += [json.loads(line) for line in fh if line.strip()]
     sub = load_submission(a.submission)
     if a.only_submitted:
         key_rows = [t for t in key_rows if t["id"] in sub]
