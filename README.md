@@ -1,5 +1,5 @@
 ![Santa's post office at night](assets/banner.jpg)
-
+(STILL IN DEVELOPMENT - UPDATES INCOMING)
 # Letters to Santa: the hackathon
 
 The full documentation is in the [wiki](../../wiki).
