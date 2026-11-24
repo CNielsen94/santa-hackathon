@@ -1,98 +1,123 @@
 # Checking and scoring your work
 
-Two tools come with this repository. Both need only Python 3.9 or newer, no extra packages.
+This guide shows how to measure your pipeline yourself during the hackathon, with exactly the same
+scoring the organisers use at the end. You need Python 3.9 or newer and no extra packages.
 
-| tool | what it does |
+In every command below, write `python3` instead of `python` on Mac and Linux. On Windows, `python`
+or `py` both work.
+
+| script | what it does |
 |---|---|
-| `check_submission.py` | checks that your submission file has the right format. It knows nothing about the answers. |
-| `score.py` | scores predictions against an answer key, with the same metrics the organisers use for the final ranking |
+| `check_submission.py` | checks that a file has the right format. It knows nothing about the answers |
+| `score.py` | scores your predictions against answer files |
+| `split_train.py` | splits the training letters into letters to build with and letters to score on |
 
-The test letters have no answer key in this repository, so you can't score them yourself.
-Instead you score your pipeline on training letters it hasn't seen.
+The test letters have no answers in this repository, so you can't score your test file yourself.
+Instead you score your pipeline on training letters it has not seen, and on the known fakes.
 
 ## 1. Get the data
 
-Download `train.zip`, `known_fakes.zip` and `test.zip` from the Releases page. Unzip each into
-a folder of the same name (`train/`, `known_fakes/`, `test/`) in this folder:
+Download `train.zip`, `known_fakes.zip` and `test.zip` from the
+[release page](https://github.com/CNielsen94/santa-hackathon/releases/tag/v1.0). Unzip each one into
+a folder with the same name inside this repository's folder. On a Mac, double-clicking the zip does
+this; on Windows, right-click the zip, choose **Extract All** and keep the suggested folder name.
+You should end up with:
 
 ```
 santa-hackathon/
   train/images/                    500 photos of genuine letters
-  train/train.jsonl                the answers for those photos
+  train/train.jsonl                their answers
   train/train.csv                  the same answers as a spreadsheet
-  known_fakes/images/              15 photos of confirmed fakes
-  known_fakes/known_fakes.jsonl    their text and signed name
-  test/images/                     2,924 photos, no answers
+  known_fakes/images/              15 photos of fake letters
+  known_fakes/known_fakes.jsonl    their answers
+  known_fakes/known_fakes.csv      the same answers as a spreadsheet
+  test/images/                     2,924 photos without answers
+  test_ids.txt                     the id of every test photo
 ```
 
-## 2. The answer format (`train.jsonl`)
+If you see `train/train/images` instead, move the inner folder's contents up one level.
 
-One letter per line. Each line is a JSON object like this (shortened):
+## 2. The answer files
+
+`.jsonl` means "JSON lines": one JSON object per line, one line per letter. In Python:
+
+```python
+import pandas as pd
+train = pd.read_json("train/train.jsonl", lines=True)
+```
+
+A line from `train/train.jsonl` (shortened):
 
 ```json
 {"id": "letter-00448b22a084",
  "image": "letter-00448b22a084_0.jpg",
  "language": "en",
- "name": "Maya",
+ "name": "Jodie",
  "transcription": "Dear Santa,\nI have been very good this yaer...",
  "wishes": [{"written": "scrapbook and glitter pens", "workshop": "arts_music"},
-            {"written": "a scooter", "workshop": "outdoor"}],
- "workshops": ["arts_music", "outdoor"]}
+            {"written": "Nintendo Switch", "workshop": "electronics"}],
+ "workshops": ["arts_music", "electronics"]}
 ```
 
-- `id`: the photo's file name without `_0.jpg`
-- `transcription`: the text you can see on the page, with the writer's own spelling
-  ("yaer" stays "yaer"); crossed-out words are left out
-- `name`: the name the letter is signed with
-- `wishes`: each wish as it is written in the letter, and the workshop that makes it
-- `workshops`: the workshops of all the wishes together
+| field | meaning |
+|---|---|
+| `id` | the photo's file name without `_0.jpg` |
+| `name` | the name the letter is signed with |
+| `transcription` | the text you can see on the page, with the writer's own spelling ("yaer" stays "yaer"). Crossed-out words are left out |
+| `wishes` | each wish as it is written in the letter, and the workshop that makes it |
+| `workshops` | the workshops of all the wishes together |
 
-All training letters are genuine. `known_fakes.jsonl` has the same format for the 15 confirmed
-fakes, with `"is_fake": 1` and no wishes (a fake goes to no workshop). Some test letters are
-fakes too, but nobody knows how many.
+All 500 training letters are genuine. `known_fakes/known_fakes.jsonl` has the same fields for the
+15 fake letters, plus `"is_fake": 1`, and no wishes. The test set also has fake letters, but nobody
+knows how many. The 15 known fakes show what fakes can look like, not how many there are.
 
-## 3. Keep some training letters aside
+## 3. Set some letters aside
 
-If you build your pipeline with all 500 letters and then score it on the same letters, the
-score will look better than it really is. Keep some aside first:
+If you build your pipeline with all 500 letters and then score it on the same letters, the score
+looks better than it really is. So split them first:
 
 ```
 python split_train.py train/train.jsonl --dev 100
 ```
 
-This writes `train/build.jsonl` (400 letters to build with) and `train/dev.jsonl` (100 letters
-to score on). Use the same split all week so your scores stay comparable.
+This writes `train/build.jsonl` (400 **build letters**, to build your pipeline with) and
+`train/dev.jsonl` (100 **dev letters**, to score on). Use the same split for the whole hackathon,
+so your scores stay comparable.
 
-The same goes for the known fakes: if you tune your fake detector until it catches all 15,
-those 15 can no longer tell you how well it works. Look at a few of them while you build, and
-keep the rest for checking.
+Treat the known fakes the same way: look at some of them while you build, and keep the rest for
+checking. If you tune your fake detection until it catches all 15, those 15 can no longer tell you
+how well it works.
 
 ## 4. Make a predictions file
 
-Run your pipeline on the photos of the letters in `train/dev.jsonl` **and** on the 15 photos
-in `known_fakes/images`, and write one CSV row per letter, in exactly the format you will hand
-in (see the README):
+Run your pipeline on the photos of the 100 dev letters **and** the 15 known fakes, and write one row
+per photo, in exactly the format you will hand in
+([Submission Format](https://github.com/CNielsen94/santa-hackathon/wiki/Submission-Format)).
+You can choose any file name, for example `my_dev_predictions.csv`.
 
-```
-id,is_fake,name,workshops,transcription,wishes,fake_score
-letter-00448b22a084,0,Maya,arts_music;outdoor,"Dear Santa,
-I have been very good this yaer...",scrapbook and glitter pens=>arts_music;a scooter=>outdoor,0.05
+```python
+import pandas as pd
+predictions.to_csv("my_dev_predictions.csv", index=False, encoding="utf-8")
 ```
 
-- Put quotes around a field with a comma or a line break in it. Python's `csv` module, pandas
-  `to_csv` and spreadsheet programs all do this for you.
-- `wishes` pairs each wish with its workshop as `wish=>workshop`, separated by `;`.
-- `fake_score` is optional.
+pandas and Python's `csv` module put quotes around fields with commas or line breaks for you. If you
+save from Excel, choose **CSV UTF-8**; the scripts accept both commas and semicolons as separators.
 
 ## 5. Check the format
 
+For your dev predictions, tell the checker which answer files to expect:
+
 ```
-python check_submission.py my_test_submission.csv
+python check_submission.py my_dev_predictions.csv --key train/dev.jsonl known_fakes/known_fakes.jsonl
 ```
 
-It prints `OK: ready to submit`, or a list of problems with their line numbers. It expects a
-row for every **test** letter, so use it on your test submission. On a dev-predictions file it
-will only complain that test letters are missing.
+For your final test file, leave out `--key`; it then expects every test photo:
+
+```
+python check_submission.py my_team.csv
+```
+
+It prints `OK`, or the first 50 problems with their line numbers.
 
 ## 6. Score your dev predictions
 
@@ -100,7 +125,8 @@ will only complain that test letters are missing.
 python score.py --key train/dev.jsonl known_fakes/known_fakes.jsonl --submission my_dev_predictions.csv --only-submitted
 ```
 
-`--key` takes one or more answer files. `--only-submitted` scores only the letters in your file. The output looks like this (example numbers):
+`--key` takes one or more answer files. `--only-submitted` scores only the letters in your file.
+The output looks like this (example numbers):
 
 ```
 **Christmas score: 71.3** (100 = every wish delivered, every fake caught)
@@ -119,20 +145,24 @@ python score.py --key train/dev.jsonl known_fakes/known_fakes.jsonl --submission
 
 How to read it:
 
-- **reading**: how many characters are wrong per character of the real text. 0.05 means
-  about 1 mistake in 20 characters.
-- **names**: case doesn't matter, accents do.
-- **wish extraction**: recall is the share of the real wishes you found; precision is the share
-  of your wishes that are real. Close spellings count ("bike" matches "a bike").
-- **routing**: only for the wishes you found, so it measures routing on its own.
-- **fake detection**: recall is the share of the known fakes you caught; **genuine letters
-  wrongly flagged** is the share of your dev letters you flagged by mistake. Every genuine letter
-  you flag costs a child all their presents. Precision here is not what you'll get on the test
-  set: your dev mix has 15 fakes in about 115 letters, and the test set has its own, unknown mix.
-- **Christmas score**: the number the ranking uses (see the README). Your dev mix differs from
-  the test set, so treat it as a guide, not a forecast.
+- **reading**: the **character error rate** counts the characters you got wrong (missing, extra or
+  different) per character of the real text. 0.05 means about 1 mistake in 20 characters.
+- **names**: share of names exactly right. Case doesn't matter, accents do.
+- **wish extraction**: recall is the share of the real wishes you found; precision is the share of
+  your wishes that are real. A wish counts as found if your wording is close to the real one
+  ("bike" matches "a bike").
+- **routing**: of the wishes you found, the share you sent to the right workshop.
+- **fake detection**: recall is the share of the known fakes you marked as fake. **Genuine letters
+  wrongly flagged** is the share of dev letters you marked as fake by mistake. Precision depends on
+  how many fakes are in the mix: here about 1 letter in 8 is fake, and the test set has a different
+  share, so precision will differ there.
+- **Christmas score**: the number the ranking uses (see the README). Your dev mix is not the test
+  mix, so use it to compare versions of your own pipeline, not to predict your final score.
 
 ## 7. Hand in
 
-Run your pipeline on all of `test/images`, write the CSV, check it with
-`check_submission.py`, and send it to the organisers.
+Run your pipeline on all 2,924 test photos, check the file with `check_submission.py`, and email it
+to the organisers (see the README).
+
+Running a pipeline over 2,924 photos can take hours. Save results as you go (for example one line
+per photo to a file), so a crash or a disconnected session doesn't cost you everything.

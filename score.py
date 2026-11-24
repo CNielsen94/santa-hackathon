@@ -72,19 +72,32 @@ def parse_wishes(cell):
     return pairs
 
 
+def read_rows(path):
+    """CSV rows as dicts. Accepts what spreadsheet programs write: a UTF-8 byte-order mark, Windows line
+    endings, and ';' as the separator (Excel with Danish or other European settings)."""
+    with open(path, encoding="utf-8-sig", newline="") as fh:
+        text = fh.read()
+    header = text.split("\n", 1)[0]
+    delimiter = ";" if header.count(";") > header.count(",") else ","
+    rows = list(csv.DictReader(text.splitlines(keepends=True), delimiter=delimiter))
+    missing = {"id", "is_fake", "name", "workshops", "transcription", "wishes"} - set(rows[0] if rows else [])
+    if missing:
+        raise SystemExit(f"{path}: missing columns: {', '.join(sorted(missing))}. "
+                         f"The first line must be: id,is_fake,name,workshops,transcription,wishes,fake_score")
+    return rows
+
 def load_submission(path):
-    with open(path, encoding="utf-8", newline="") as fh:
-        rows = {}
-        for r in csv.DictReader(fh):
-            score = (r.get("fake_score") or "").strip()
-            rows[r["id"].strip()] = {
-                "is_fake": str(r.get("is_fake", "")).strip().lower() in ("1", "true", "yes"),
-                "name": r.get("name", ""),
-                "workshops": {w.strip() for w in (r.get("workshops") or "").split(";") if w.strip()},
-                "transcription": r.get("transcription") or "",
-                "wishes": parse_wishes(r.get("wishes")),
-                "fake_score": float(score) if score else None,
-            }
+    rows = {}
+    for r in read_rows(path):
+        score = (r.get("fake_score") or "").strip()
+        rows[r["id"].strip()] = {
+            "is_fake": str(r.get("is_fake", "")).strip().lower() in ("1", "true", "yes"),
+            "name": r.get("name", ""),
+            "workshops": {w.strip() for w in (r.get("workshops") or "").split(";") if w.strip()},
+            "transcription": r.get("transcription") or "",
+            "wishes": parse_wishes(r.get("wishes")),
+            "fake_score": float(score) if score else None,
+        }
     return rows
 
 

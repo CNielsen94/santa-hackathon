@@ -2,92 +2,72 @@
 (STILL IN DEVELOPMENT - UPDATES INCOMING)
 # Letters to Santa: the hackathon
 
-The full documentation is in the [wiki](../../wiki).
+Santa's mail room is drowning. Thousands of handwritten letters have been photographed, and the
+elves need a pipeline that does four things for each photo:
 
-Santa's mail room is drowning. Thousands of handwritten letters have been
-photographed, and the elves need a pipeline that, for each photo:
-
-1. **reads** the letter (it may be in any of 18 languages and scripts),
-2. **finds the writer's name** as signed,
+1. **reads** the letter (it can be in any of 18 languages),
+2. **finds the name** the letter is signed with,
 3. **decides whether the letter is fake**,
-4. **sends every wish** in a genuine letter to the right workshop
-   ([workshops.json](workshops.json)). Fake letters go to no workshop.
+4. **sends every wish** in a genuine letter to the right workshop. A fake letter gets no wishes.
 
-Not all of Santa's mail comes from children, and nobody knows how much of it is
-fake. The elves have checked a sample of letters by hand and know them to be
-genuine, and they have caught a few fakes: 15 of them. That's too few to learn
-from on their own, but enough to test your ideas on. Fake detection works like
-fraud detection: learn what genuine mail looks like, flag what doesn't fit, and
-use the known fakes to check that you catch them.
+The full guide is in the **[wiki](https://github.com/CNielsen94/santa-hackathon/wiki)**. Start with
+[Getting Started](https://github.com/CNielsen94/santa-hackathon/wiki/Getting-Started).
 
 ## Data
 
-Download the three files from the [Releases](../../releases) page:
+Download the three files from the
+[release page](https://github.com/CNielsen94/santa-hackathon/releases/tag/v1.0):
 
-| file | contents |
-|---|---|
-| `train.zip` (about 210 MB) | 500 genuine letters: `images/` plus `train.jsonl` and `train.csv` with every answer: the text visible on the page, the name, and each wish as written with its workshop |
-| `known_fakes.zip` (about 6 MB) | 15 confirmed fakes: `images/` plus `known_fakes.jsonl` and `known_fakes.csv` with the text visible on the page and the name they signed with. They are not part of the test set |
-| `test.zip` (about 1.2 GB) | 2,924 photos with no answers. Your score comes from these |
+| file | size | contents |
+|---|---|---|
+| `train.zip` | 210 MB | 500 genuine letters: photos and their answers |
+| `known_fakes.zip` | 6 MB | 15 fake letters the elves caught: photos, their text and the name they are signed with. They are not in the test set |
+| `test.zip` | 1.2 GB | 2,924 photos without answers. Your result is measured on these |
 
-`test_ids.txt` lists every test letter. A letter's id is its file name without
-`_0.jpg`.
+Unzip each file into a folder with the same name (`train`, `known_fakes`, `test`) inside this
+repository's folder. Details: [Data](https://github.com/CNielsen94/santa-hackathon/wiki/Data).
 
-## What to hand in
+## What you hand in
 
-One CSV file with a row for every test letter:
+One CSV file with a row for every test photo:
 
 ```
 id,is_fake,name,workshops,transcription,wishes,fake_score
-letter-0a1b2c3d4e5f,0,Emma,toy_shop;outdoor,"Dear Santa, I want a doll and a bike...",a doll=>toy_shop;a bike=>outdoor,0.04
-letter-6a7b8c9d0e1f,1,,,"Hand over the sleigh schedule...",,0.97
+letter-0a1b2c3d4e5f,0,Emma,outdoor;toy_shop,"Dear Santa, I want a doll and a bike...",a doll=>toy_shop;a bike=>outdoor,0.04
+letter-6a7b8c9d0e1f,1,Grinchy,,"Hand over the sleigh schedule...",,0.97
 ```
 
-- `is_fake`: 1 for a fake letter, 0 for a genuine one
-- `name`: the name as signed (case doesn't matter, accents do)
-- `workshops`: every workshop the letter's wishes go to, separated by `;`, empty for fakes
-- `transcription`: the text you read on the page, as written (keep the writer's spelling)
-- `wishes`: each wish as written, with its workshop: `wish=>workshop`, separated by `;`, empty for fakes
-- `fake_score` (optional): how likely you think the letter is fake, from 0 to 1
-
-Use quotes around any field that contains a comma or a line break (any CSV
-library does this for you).
-
-Check your file before submitting (and see [SCORING.md](SCORING.md) for how to score your
-pipeline on training letters yourself, with the same metrics as the final ranking):
+Every column is explained on the
+[Submission Format](https://github.com/CNielsen94/santa-hackathon/wiki/Submission-Format) page.
+Check your file before you hand it in:
 
 ```
 python check_submission.py my_team.csv
 ```
 
-## Scoring
+(On Mac and Linux, write `python3` instead of `python`.)
 
-Every part of your pipeline gets its own score, so you can see where it loses points:
+**Hand-in:** email your file to the organisers before the deadline. The address and the deadline are
+given at the start of the hackathon. Name the file after your team, for example `team_rudolph.csv`.
+The organisers score all teams on the final day.
 
-| stage | metric |
-|---|---|
-| reading | character error rate of `transcription` (lower is better) |
-| names | share of names exactly right |
-| wish extraction | recall and precision of your wish phrases (close spellings count) |
-| routing | of the wishes you found, the share sent to the right workshop |
-| fake detection | precision, recall and F1; ROC AUC if you give `fake_score` |
-| end to end | share of genuine letters fully right: not flagged, every wish found and routed, name right |
+## How you are scored
 
-Your rank comes from one number, the **Christmas score**: points as a percentage
-of the best possible total.
+Each part of your pipeline gets its own score, and the ranking uses one number, the **Christmas
+score**: your points divided by the most points possible, times 100.
 
 | what happens | points |
 |---|---|
-| a real wish reaches the right workshop | +1 |
-| a real wish is lost or goes to the wrong workshop | 0 |
-| a real letter is flagged as fake (a child gets nothing) | −1 for each of its wishes |
-| a fake letter is caught | +1 |
-| a fake letter slips through | −2 |
+| a wish in a genuine letter reaches the right workshop | +1 |
+| a wish in a genuine letter is missed or goes to the wrong workshop | 0 |
+| a genuine letter is marked as fake | −1 for each of its wishes |
+| a fake letter is marked as fake | +1 |
+| a fake letter is not marked as fake | −2 |
 
-Flag too much and children lose their presents; flag too little and the Grinch
-gets in. Listing a wish more than once, or under several workshops, earns nothing
-extra.
+You can measure your own pipeline during the hackathon with the same scoring script
+(`score.py`): see [Scoring Yourself](https://github.com/CNielsen94/santa-hackathon/wiki/Scoring-Yourself)
+or [SCORING.md](SCORING.md).
 
-A scoring page will follow (link from the organisers). Each team will get a
-limited number of scores per day. During the hackathon your score will come from
-one half of the test letters; the final ranking uses the other half.
+## Rules
+
+Anything goes: any language, library, model, service or AI assistant. Just hand in the CSV.
