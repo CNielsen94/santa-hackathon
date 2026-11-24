@@ -47,7 +47,8 @@ letter-6a7b8c9d0e1f,1,,,"Hand over the sleigh schedule...",,0.97
 Use quotes around any field that contains a comma or a line break (any CSV
 library does this for you).
 
-Check your file before submitting:
+Check your file before submitting (and see [SCORING.md](SCORING.md) for how to score your
+pipeline on training letters yourself, with the same metrics as the final ranking):
 
 ```
 python check_submission.py my_team.csv
