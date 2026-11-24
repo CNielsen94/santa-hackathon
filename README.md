@@ -1,4 +1,8 @@
+![Santa's post office at night](assets/banner.jpg)
+
 # Letters to Santa: the hackathon
+
+The full documentation is in the [wiki](../../wiki).
 
 Santa's mail room is drowning. Thousands of handwritten letters have been
 photographed, and the elves need a pipeline that, for each photo:
@@ -18,7 +22,7 @@ use the known fakes to check that you catch them.
 
 ## Data
 
-Download both files from the [Releases](../../releases) page:
+Download the three files from the [Releases](../../releases) page:
 
 | file | contents |
 |---|---|
