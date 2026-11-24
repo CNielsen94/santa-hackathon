@@ -22,7 +22,7 @@ Download both files from the [Releases](../../releases) page:
 | file | contents |
 |---|---|
 | `train.zip` (about 210 MB) | 500 genuine letters: `images/` plus `train.jsonl` and `train.csv` with every answer: the text visible on the page, the name, and each wish as written with its workshop |
-| `test.zip` (about 1.2 GB) | 2,923 photos with no answers. Your score comes from these |
+| `test.zip` (about 1.2 GB) | 2,924 photos with no answers. Your score comes from these |
 
 `test_ids.txt` lists every test letter. A letter's id is its file name without
 `_0.jpg`.
