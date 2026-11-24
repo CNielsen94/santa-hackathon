@@ -32,16 +32,20 @@ Download both files from the [Releases](../../releases) page:
 One CSV file with a row for every test letter:
 
 ```
-id,is_fake,name,workshops
-letter-0a1b2c3d4e5f,0,Emma,toy_shop;electronics
-letter-6a7b8c9d0e1f,1,,
+id,is_fake,name,workshops,transcription,wishes,fake_score
+letter-0a1b2c3d4e5f,0,Emma,toy_shop;outdoor,"Dear Santa, I want a doll and a bike...",a doll=>toy_shop;a bike=>outdoor,0.04
+letter-6a7b8c9d0e1f,1,,,"Hand over the sleigh schedule...",,0.97
 ```
 
 - `is_fake`: 1 for a fake letter, 0 for a genuine one
 - `name`: the name as signed (case doesn't matter, accents do)
-- `workshops`: every workshop the letter's wishes go to, separated by `;`,
-  and empty for fakes
-- optional: a `transcription` column with what you read, scored as well
+- `workshops`: every workshop the letter's wishes go to, separated by `;`, empty for fakes
+- `transcription`: the text you read on the page, as written (keep the writer's spelling)
+- `wishes`: each wish as written, with its workshop: `wish=>workshop`, separated by `;`, empty for fakes
+- `fake_score` (optional): how likely you think the letter is fake, from 0 to 1
+
+Use quotes around any field that contains a comma or a line break (any CSV
+library does this for you).
 
 Check your file before submitting:
 
@@ -51,15 +55,31 @@ python check_submission.py my_team.csv
 
 ## Scoring
 
-Each stage is scored on its own:
+Every part of your pipeline gets its own score, so you can see where it loses points:
 
 | stage | metric |
 |---|---|
-| reading | character error rate of `transcription` (optional) |
-| name | share of names exactly right |
-| fake detection | precision, recall and F1 |
-| workshops | F1 over the workshops of genuine letters |
-| end to end | share of genuine letters that are fully right: not flagged, every workshop right |
+| reading | character error rate of `transcription` (lower is better) |
+| names | share of names exactly right |
+| wish extraction | recall and precision of your wish phrases (close spellings count) |
+| routing | of the wishes you found, the share sent to the right workshop |
+| fake detection | precision, recall and F1; ROC AUC if you give `fake_score` |
+| end to end | share of genuine letters fully right: not flagged, every wish found and routed, name right |
+
+Your rank comes from one number, the **Christmas score**: points as a percentage
+of the best possible total.
+
+| what happens | points |
+|---|---|
+| a real wish reaches the right workshop | +1 |
+| a real wish is lost or goes to the wrong workshop | 0 |
+| a real letter is flagged as fake (a child gets nothing) | −1 for each of its wishes |
+| a fake letter is caught | +1 |
+| a fake letter slips through | −2 |
+
+Flag too much and children lose their presents; flag too little and the Grinch
+gets in. Listing a wish more than once, or under several workshops, earns nothing
+extra.
 
 A scoring page will follow (link from the organisers). Each team will get a
 limited number of scores per day. During the hackathon your score will come from

@@ -17,7 +17,7 @@ def check(path):
     problems = []
     with open(path, encoding="utf-8", newline="") as fh:
         reader = csv.DictReader(fh)
-        missing_cols = {"id", "is_fake", "name", "workshops"} - set(reader.fieldnames or [])
+        missing_cols = {"id", "is_fake", "name", "workshops", "transcription", "wishes"} - set(reader.fieldnames or [])
         if missing_cols:
             return [f"missing columns: {', '.join(sorted(missing_cols))}"]
         seen = set()
@@ -36,6 +36,28 @@ def check(path):
                     problems.append(f"line {n}: unknown workshop {w!r}")
             if row["is_fake"].strip() == "1" and shops:
                 problems.append(f"line {n}: a fake letter goes to no workshop")
+            wish_shops = set()
+            for part in (row["wishes"] or "").split(";"):
+                if not part.strip():
+                    continue
+                text, arrow, shop = part.partition("=>")
+                if not arrow or not text.strip():
+                    problems.append(f"line {n}: wishes must look like 'wish=>workshop', got {part.strip()!r}")
+                elif shop.strip() not in workshops:
+                    problems.append(f"line {n}: unknown workshop {shop.strip()!r} in wishes")
+                else:
+                    wish_shops.add(shop.strip())
+            if row["is_fake"].strip() == "1" and wish_shops:
+                problems.append(f"line {n}: a fake letter has no wishes to route")
+            if wish_shops and wish_shops != set(shops):
+                problems.append(f"line {n}: workshops column does not match the workshops in wishes")
+            score = (row.get("fake_score") or "").strip()
+            if score:
+                try:
+                    if not 0 <= float(score) <= 1:
+                        raise ValueError
+                except ValueError:
+                    problems.append(f"line {n}: fake_score must be a number from 0 to 1")
     if ids - seen:
         problems.append(f"{len(ids - seen)} test letters have no row")
     return problems
