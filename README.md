@@ -22,14 +22,30 @@ Download the three files from the
 |---|---|---|
 | `train.zip` | 210 MB | 500 genuine letters: photos and their answers |
 | `known_fakes.zip` | 6 MB | 15 fake letters the elves caught: photos, their text and the name they are signed with. They are not in the test set |
-| `test.zip` | 1.2 GB | 2,924 photos without answers. Your result is measured on these |
+| `test.zip` | 1.2 GB | 2,924 photos without answers, to build and test with. You are not ranked on these |
 
 Unzip each file into a folder with the same name (`train`, `known_fakes`, `test`) inside this
 repository's folder. Details: [Data](https://github.com/CNielsen94/santa-hackathon/wiki/Data).
 
 ## What you hand in
 
-One CSV file with a row for every test photo:
+On the final day you hand in the **code** of your pipeline. The organisers run it on 150 new
+letters nobody has seen (they are not in the release) and score the result. The Christmas score on
+those 150 letters decides the ranking, and the results are revealed at the end.
+
+Hand in one of:
+
+1. A folder (a zip, or a link to a GitHub repository the organisers can read) with `run.py` at the
+   top level and a `requirements.txt`. The organisers run it like this:
+
+   ```
+   python run.py --images path/to/photos --out predictions.csv
+   ```
+
+2. A Colab notebook (`.ipynb`) whose first code cell sets `IMAGES_DIR` and `OUTPUT_CSV`. The
+   organisers set them and choose Run all.
+
+Your code reads every photo in the folder it is given and writes one row per photo, in this format:
 
 ```
 id,is_fake,name,workshops,transcription,wishes,fake_score
@@ -37,19 +53,15 @@ letter-0a1b2c3d4e5f,0,Emma,outdoor;toy_shop,"Dear Santa, I want a doll and a bik
 letter-6a7b8c9d0e1f,1,Grinchy,,"Hand over the sleigh schedule...",,0.97
 ```
 
-Every column is explained on the
-[Submission Format](https://github.com/CNielsen94/santa-hackathon/wiki/Submission-Format) page.
-Check your file before you hand it in:
+Every column, and everything your code must do to run on its own (model weights, API keys, run
+time), is on the
+[Submission Format](https://github.com/CNielsen94/santa-hackathon/wiki/Submission-Format) page. The
+deadline and how to send your code are given at the start of the hackathon.
 
-```
-python check_submission.py my_team.csv
-```
-
-(On Mac and Linux, write `python3` instead of `python`.)
-
-**Hand-in:** email your file to the organisers before the deadline. The address and the deadline are
-given at the start of the hackathon. Name the file after your team, for example `team_rudolph.csv`.
-The organisers score all teams on the final day.
+Practise the hand-in: run your code on a folder of your dev photos, then check and score the CSV
+(see [Scoring Yourself](https://github.com/CNielsen94/santa-hackathon/wiki/Scoring-Yourself)).
+To check that your pipeline runs on all 2,924 test photos and writes a valid file, use
+`python check_submission.py my_team.csv`. (On Mac and Linux, write `python3` instead of `python`.)
 
 ## How you are scored
 
@@ -66,8 +78,9 @@ score**: your points divided by the most points possible, times 100.
 
 You can measure your own pipeline during the hackathon with the same scoring script
 (`score.py`): see [Scoring Yourself](https://github.com/CNielsen94/santa-hackathon/wiki/Scoring-Yourself)
-or [SCORING.md](SCORING.md).
+or [SCORING.md](SCORING.md). On the final day the organisers score the output of your code on the 150
+new letters with the same script.
 
 ## Rules
 
-Anything goes: any language, library, model, service or AI assistant. Just hand in the CSV.
+Anything goes: any language, library, model, service or AI assistant. The code just has to run as described on the hand-in page.

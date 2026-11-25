@@ -1,7 +1,8 @@
 # Checking and scoring your work
 
 This guide shows how to measure your pipeline yourself during the hackathon, with exactly the same
-scoring the organisers use at the end. You need Python 3.9 or newer and no extra packages.
+scoring the organisers use at the end: they run your code on 150 new letters and score its output
+with `score.py`. You need Python 3.9 or newer and no extra packages.
 
 In every command below, write `python3` instead of `python` on Mac and Linux. On Windows, `python`
 or `py` both work.
@@ -12,7 +13,7 @@ or `py` both work.
 | `score.py` | scores your predictions against answer files |
 | `split_train.py` | splits the training letters into letters to build with and letters to score on |
 
-The test letters have no answers in this repository, so you can't score your test file yourself.
+The test photos have no answers in this repository, so you can't score a test file yourself.
 Instead you score your pipeline on training letters it has not seen, and on the known fakes.
 
 ## 1. Get the data
@@ -68,7 +69,7 @@ A line from `train/train.jsonl` (shortened):
 | `workshops` | the workshops of all the wishes together |
 
 All 500 training letters are genuine. `known_fakes/known_fakes.jsonl` has the same fields for the
-15 fake letters, plus `"is_fake": 1`, and no wishes. The test set also has fake letters, but nobody
+15 fake letters, plus `"is_fake": 1`, and no wishes. The test photos also include fake letters, but nobody
 knows how many. The 15 known fakes show what fakes can look like, not how many there are.
 
 ## 3. Set some letters aside
@@ -91,7 +92,7 @@ how well it works.
 ## 4. Make a predictions file
 
 Run your pipeline on the photos of the 100 dev letters **and** the 15 known fakes, and write one row
-per photo, in exactly the format you will hand in
+per photo, in exactly the format your code will write
 ([Submission Format](https://github.com/CNielsen94/santa-hackathon/wiki/Submission-Format)).
 You can choose any file name, for example `my_dev_predictions.csv`.
 
@@ -111,7 +112,8 @@ For your dev predictions, tell the checker which answer files to expect:
 python check_submission.py my_dev_predictions.csv --key train/dev.jsonl known_fakes/known_fakes.jsonl
 ```
 
-For your final test file, leave out `--key`; it then expects every test photo:
+To check that your pipeline runs on the full set and writes a valid file, leave out `--key`; it
+then expects a row for all 2,924 test photos:
 
 ```
 python check_submission.py my_team.csv
@@ -154,15 +156,21 @@ How to read it:
 - **routing**: of the wishes you found, the share you sent to the right workshop.
 - **fake detection**: recall is the share of the known fakes you marked as fake. **Genuine letters
   wrongly flagged** is the share of dev letters you marked as fake by mistake. Precision depends on
-  how many fakes are in the mix: here about 1 letter in 8 is fake, and the test set has a different
+  how many fakes are in the mix: here about 1 letter in 8 is fake, and other mixes have a different
   share, so precision will differ there.
-- **Christmas score**: the number the ranking uses (see the README). Your dev mix is not the test
-  mix, so use it to compare versions of your own pipeline, not to predict your final score.
+- **Christmas score**: the number the ranking uses (see the README). Your dev mix is not the mix
+  of the final letters, so use it to compare versions of your own pipeline, not to predict your final
+  score.
 
 ## 7. Hand in
 
-Run your pipeline on all 2,924 test photos, check the file with `check_submission.py`, and email it
-to the organisers (see the README).
+On the final day you hand in the code of your pipeline, not a CSV. The organisers run it on 150 new
+letters and score the output with `score.py`. The full requirements are on the
+[Submission Format](https://github.com/CNielsen94/santa-hackathon/wiki/Submission-Format) page.
 
-Running a pipeline over 2,924 photos can take hours. Save results as you go (for example one line
+Practise it. Run your entry point (`run.py`, or the notebook) on a folder of your dev photos, or on
+the 15 known fakes. Then check the CSV with `check_submission.py --key ...` (step 5) and score it with
+`score.py --only-submitted` (step 6). That is exactly what the organisers do with the secret letters.
+
+Running a pipeline over all 2,924 test photos can take hours. Save results as you go (for example one line
 per photo to a file), so a crash or a disconnected session doesn't cost you everything.
